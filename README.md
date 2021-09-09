@@ -1,7 +1,8 @@
 # eleventy serverless Preview Mode for Azure FaaS
 
 ## Features
-- Single page 11ty rendering of content retrieved from your data source (Wordpress API, GitHub?)
+- Single page 11ty rendering of content retrieved from your data source (Wordpress API).
+- Digest page for all pages that match a Wordpress tag ID.
 
 ## Intent
 * Using an existing 11ty project, add the ability to render a single page from Wordpress with an Azure function.
@@ -70,7 +71,7 @@ module.exports = previewModePageClass;
   addPreviewModeToEleventy(eleventyConfig);
 ```
 
-## For Azure Faas ##
+## For Azure FaaS ##
 `index.js`
 ```
 const { serverlessHandler } = require("@cagov/11ty-serverless-preview-mode");
@@ -102,5 +103,27 @@ module.exports = async function (context, req) {
     };
   }
   if (context.done) context.done();
+}
+```
+`function.json`
+```
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get"
+      ],
+      "route": "{*segments}"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    }
+  ]
 }
 ```
