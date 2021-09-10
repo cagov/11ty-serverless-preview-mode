@@ -1,29 +1,33 @@
-# Eleventy serverless Preview Mode for Wordpress API
+# Eleventy serverless preview mode #
 
-If you have content in Wordpress for your eleventy site, you can create a FaaS (ex. Azure) function that will render content for preview right out of Wordpress.
+Render a single 11ty page using data from your Wordpress API endpoint.  
+
+If you have content in Wordpress for your eleventy site, you can create a Function as a Service (FaaS) function that will render content for preview right out of Wordpress.
 
 ## Features
 - Single page 11ty rendering of content retrieved from your Wordpress API data source.
 - Digest page for all pages that match a specific Wordpress tag ID.
 - Easy Azure FaaS integration
 
-## Sample preview mode page template ##
+## Eleventy setup ##
+
+Use your existing 11ty build to provide all the template work needed to render your preview.
+
+### Preview mode page template ###
 You will need to have a single page in your 11ty input templates to customize how your pages are rendered.
 
 Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
+
+`pages\previewModePage.11ty.js`
 ```
-//@ts-check
 const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
 
 const wordPressSettings = {
     wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
-    previewWordPressTagId: 20 //preview-mode tag id in Wordpress
+    previewWordPressTagId: 20 //your preview-mode tag id in Wordpress
 }
 
 class previewModePageClass {
-    /**
-     * First, mostly static.  Returns the frontmatter data.
-     */
     async data() {
         return {
             layout: "page", //Or whatever layout the preview page should have
@@ -32,16 +36,12 @@ class previewModePageClass {
         };
     }
 
-    /**
-     * Last, after the frontmatter data is loaded.  Able to render the page.
-     * @param {{ title: string; publishdate: string; meta: string; description: string; lead: string; author: string; previewimage: string; eleventy: { serverless: { query: { postid?: string; }; }; }; }} itemData
-     */
     async render(itemData) {
         const jsonData = await getPostJsonFromWordpress(itemData, wordPressSettings);
 
-        let featuredMedia = jsonData._embedded["wp:featuredmedia"];
+        //Customize for you templates here
 
-        //Customize for you templates
+        let featuredMedia = jsonData._embedded["wp:featuredmedia"];
         itemData.title = jsonData.title.rendered;
         itemData.publishdate = jsonData.date.split('T')[0]; //new Date(jsonData.modified_gmt)
         itemData.meta = jsonData.excerpt.rendered;
@@ -57,7 +57,10 @@ class previewModePageClass {
 module.exports = previewModePageClass;
 ```
 
-## Add this to your existing `.eleventy.js` ##
+### Adding to Eleventy configuration ###
+You will need to tell your Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
+
+`.eleventy.js`
 ```
 module.exports = function(eleventyConfig) {
 //...
@@ -67,44 +70,28 @@ module.exports = function(eleventyConfig) {
   
 ```
 
-## For Azure FaaS ##
-
-Using Azure FaaS, the service can render a single page from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  To detect a resource request, this implementation uses a route filter for `segments`.
-
-### `index.js` ###
+### .gitignore ###
+When your run your 11ty build locally, you don't want to save the generated output (`preview-mode-auto-generated`) to your repo.
+`.gitignore`
 ```
-const { serverlessHandler } = require("@cagov/11ty-serverless-preview-mode");
-const contentRedirectSiteTarget = "https://digital.ca.gov";
+# 11ty serverless generated folder
+/preview-mode-auto-generated
+```
 
-/**
- * Azure Function to render a single 11ty page
- * @param {{res:{statusCode:number;body:string;headers?:*};done:function}} context
- * @param {{params:{segments?:*},headers:*,query:*}} req
- */
-module.exports = async function (context, req) {
-  try {
-    if (req.params.segments) { // Resource call, redirect back to the main site
-      context.res = { statusCode: 301, headers: { location: `${contentRedirectSiteTarget}${req.headers["x-original-url"]}` }, body: null };
-    } else {
-      context.res = await serverlessHandler(req.query);
-    }
+## Setting up with Azure Function as a Service (FaaS) ##
 
-  } catch (error) {
-    context.res = {
-      status: error.httpStatusCode || 500,
-      body: JSON.stringify(
-        {
-          error: error.message,
-        },
-        null,
-        2
-      ),
-    };
-  }
-  if (context.done) context.done();
+Using Azure FaaS, the service can render a single page from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  Any request without `?postid=` will be considered a forwarded resource request.  Requests without any path will render a digest page showing all the available preview pages that match a tag id.
+
+### `myFunction\index.js` ###
+The service has a complete handler for Azure FaaS - `azureFunctionHandler`.  Include the url for your live service to allow resource request forwarding.
+```
+const { azureFunctionHandler } = require("@cagov/11ty-serverless-preview-mode");
+module.exports = async function (context) {
+  await azureFunctionHandler(context, "https://digital.ca.gov");
 }
 ```
-### `function.json` ###
+### `myFunction\function.json` ###
+You will need to trap ALL routes for your functions to support resource forwarding.  Set `route` like this...
 ```
 {
   "bindings": [
@@ -116,7 +103,7 @@ module.exports = async function (context, req) {
       "methods": [
         "get"
       ],
-      "route": "{*segments}"
+      "route": "{*routes}"
     },
     {
       "type": "http",
@@ -124,6 +111,17 @@ module.exports = async function (context, req) {
       "name": "res"
     }
   ]
+}
+```
+### `host.json`
+Set `routePrefix` to blank in the `host.json` file in your Azure function project root.
+```
+{
+  "extensions": {
+      "http": {
+          "routePrefix": ""
+      }
+  }
 }
 ```
 
