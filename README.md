@@ -17,9 +17,13 @@ Use your existing 11ty build to provide all the template work needed to render y
 You will need to have a single page in your 11ty input templates to customize how your pages are rendered.
 
 Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
-
-`pages\previewModePage.11ty.js`
+```javascript I'm A tab
+console.log('Code Tab A');
 ```
+```javascript I'm tab B
+console.log('Code Tab B');
+```
+```javascript pages\previewModePage.11ty.js
 const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
 
 const wordPressSettings = {
