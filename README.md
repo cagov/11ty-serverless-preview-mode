@@ -18,7 +18,7 @@ You will need to have a single page in your 11ty input templates to customize ho
 
 Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
 
-#### pages\previewModePage.11ty.js ####
+#### **`pages\previewModePage.11ty.js`** ####
 ```javascript
 const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
 
@@ -60,7 +60,7 @@ module.exports = previewModePageClass;
 ### Adding to Eleventy configuration ###
 You will need to tell your Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
 
-#### .eleventy.js ####
+#### **`.eleventy.js`** ####
 ```javascript
 module.exports = function(eleventyConfig) {
 //...
@@ -72,7 +72,7 @@ module.exports = function(eleventyConfig) {
 
 ### Git ignore ###
 When your run your 11ty build locally, you don't want to save the generated output (`preview-mode-auto-generated`) to your repo.
-#### .gitignore ####
+#### **`.gitignore`** ####
 ```php
 # 11ty serverless generated folder
 /preview-mode-auto-generated
@@ -82,15 +82,16 @@ When your run your 11ty build locally, you don't want to save the generated outp
 
 Using Azure FaaS, the service can render a single page from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  Any request without `?postid=` will be considered a forwarded resource request.  Requests without any path will render a digest page showing all the available preview pages that match a tag id.
 
-### `myFunction\index.js` ###
-The service has a complete handler for Azure FaaS - `azureFunctionHandler`.  Include the url for your live service to allow resource request forwarding.
+### Azure function source ###
+The package has a complete handler for Azure FaaS - `azureFunctionHandler`.  Include the url for your live web site to allow resource request forwarding.
+#### **`yourFunction\index.js`** ####
 ```javascript
 const { azureFunctionHandler } = require("@cagov/11ty-serverless-preview-mode");
 module.exports = async function (context) {
   await azureFunctionHandler(context, "https://digital.ca.gov");
 }
 ```
-### `myFunction\function.json` ###
+#### **`yourFunction\function.json`** ####
 You will need to trap ALL routes for your functions to support resource forwarding.  Set `route` like this...
 ```json
 {
@@ -113,7 +114,7 @@ You will need to trap ALL routes for your functions to support resource forwardi
   ]
 }
 ```
-### `host.json`
+#### **`host.json`** ####
 Set `routePrefix` to blank in the `host.json` file in your Azure function project root.
 ```json
 {
