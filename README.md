@@ -4,10 +4,24 @@ Render a single 11ty page using data from your Wordpress API endpoint.
 
 If you have content in Wordpress for your eleventy site, you can create a Function as a Service (FaaS) function that will render Wordpress content without having to save it anywhere (serverless).
 
-## Features
+## Features ##
 - Single-page 11ty rendering of content retrieved from your Wordpress API data source.
 - Digest page for all pages that match a specific Wordpress tag ID.
 - Easy Azure FaaS integration
+
+## User experience ##
+1. Content editor edits and saves a Wordpress post.
+1. Content editor navigates to the preivew mode endpoint.
+1. Content editor selects a post from the list of preview ready posts.
+1. Content editor views fully rendered content.
+
+## Sample navigation ##
+- `https://[my-function-url]/` - Digest page.  Display a list of all posts with the `preview` tag set.
+- `https://[my-function-url]/myfile.jpg` - Resource request.  Will redirect (301) to the main site (`https://[real-url]/myfile.jpg`) to return live content.  This is how CSS and other content can be sent to the browser as relative links.
+- `https://[my-function-url]/?postid=123` - Render request.  Will render the page using 11ty with Wordpress content from post #123.
+## Assumptions ##
+- End users are using Wordpress to edit content.
+- Your project is using `wordpress-to-github` (Coming soon) or similiar tool for deploying Wordpress content to an 11ty project.
 
 ## Eleventy setup ##
 
