@@ -1,8 +1,10 @@
-
 //@ts-check
 const fetch = require('node-fetch/lib');
-const serverlessFunctionName = "possum";
-const pagePath = "/GeneratePreviewModePath";
+/**
+ * The folder name to place the generated server handler.  Must be added to .gitignore.
+ */
+const serverlessFunctionFolderName = "preview-mode-auto-generated";
+const eleventySinglePagePath = "/GeneratePreviewModePath";
 const { EleventyServerlessBundlerPlugin } = require("@11ty/eleventy");
 /** @type WordpressPostRow */
 const digestPageJSON = require('./digestPageJson.json');
@@ -18,7 +20,7 @@ const digestPageJSON = require('./digestPageJson.json');
  */
 const addPreviewModeToEleventy = eleventyConfig => {
     eleventyConfig.addPlugin(EleventyServerlessBundlerPlugin, {
-        name: serverlessFunctionName, // The serverless function name from your permalink object
+        name: serverlessFunctionFolderName, // The serverless function name from your permalink object
         inputDir: "",
         functionsDir: "", //off the root
         redirects: "", //no redirect handling built in
@@ -36,9 +38,9 @@ const addPreviewModeToEleventy = eleventyConfig => {
  */
 const serverlessHandler = async queryStringParameters => {
     const path = require('path'); //Path Resolve needed to make plugin mode copy work
-    const xpath = path.resolve(".", serverlessFunctionName);
+    const xpath = path.resolve(".", serverlessFunctionFolderName);
     const serverlessFolder = require(xpath);
-    return serverlessFolder.handler({ path: pagePath, queryStringParameters });
+    return serverlessFolder.handler({ path: eleventySinglePagePath, queryStringParameters });
 };
 
 /**
@@ -122,17 +124,17 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
  * Puts the correct permalink in the data section
  * @example 
  * async data() {
- *   return {
- *     layout: "page",
- *     tags: ["news"],
- *     ...addPreviewModeDataElements()
- *   };
+ *     return {
+ *         layout: "page",
+ *         tags: ["news"],
+ *         ...addPreviewModeDataElements()
+ *     };
  * }
  */
- const addPreviewModeDataElements = () => (
+const addPreviewModeDataElements = () => (
     {
         permalink: {
-            [serverlessFunctionName]: pagePath
+            [serverlessFunctionFolderName]: eleventySinglePagePath
         }
     }
 );
@@ -141,5 +143,6 @@ module.exports = {
     serverlessHandler,
     getPostJsonFromWordpress,
     addPreviewModeToEleventy,
-    addPreviewModeDataElements
+    addPreviewModeDataElements,
+    serverlessFunctionFolderName
 }
