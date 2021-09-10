@@ -120,13 +120,14 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 
 /**
  * Puts the correct permalink in the data section
- * @example async data() {
- *        return {
- *           layout: "page",
- *           tags: ["news"],
- *           ...addPreviewModeDataElements()
- *       };
- *   }
+ * @example 
+ * async data() {
+ *   return {
+ *     layout: "page",
+ *     tags: ["news"],
+ *     ...addPreviewModeDataElements()
+ *   };
+ * }
  */
  const addPreviewModeDataElements = () => (
     {
