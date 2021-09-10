@@ -19,7 +19,7 @@ You will need to have a single page in your 11ty input templates to customize ho
 Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
 
 #### pages\previewModePage.11ty.js ####
-```javascript
+```node
 const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
 
 const wordPressSettings = {
@@ -61,7 +61,7 @@ module.exports = previewModePageClass;
 You will need to tell your Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
 
 #### .eleventy.js ####
-```javascript
+```node
 module.exports = function(eleventyConfig) {
 //...
   const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
@@ -84,7 +84,7 @@ Using Azure FaaS, the service can render a single page from remote content, whil
 
 ### `myFunction\index.js` ###
 The service has a complete handler for Azure FaaS - `azureFunctionHandler`.  Include the url for your live service to allow resource request forwarding.
-```javascript
+```node
 const { azureFunctionHandler } = require("@cagov/11ty-serverless-preview-mode");
 module.exports = async function (context) {
   await azureFunctionHandler(context, "https://digital.ca.gov");
