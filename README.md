@@ -2,19 +2,19 @@
 
 Render a single 11ty page using data from your Wordpress API endpoint.  
 
-If you have content in Wordpress for your eleventy site, you can create a Function as a Service (FaaS) function that will render content for preview right out of Wordpress.
+If you have content in Wordpress for your eleventy site, you can create a Function as a Service (FaaS) function that will render Wordpress content without having to save it anywhere (serverless).
 
 ## Features
-- Single page 11ty rendering of content retrieved from your Wordpress API data source.
+- Single-page 11ty rendering of content retrieved from your Wordpress API data source.
 - Digest page for all pages that match a specific Wordpress tag ID.
 - Easy Azure FaaS integration
 
 ## Eleventy setup ##
 
-Use your existing 11ty build to provide all the template work needed to render your preview.
+Use your existing 11ty build to provide all the template work required to render your preview.
 
 ### Preview mode page template ###
-You will need to have a single page in your 11ty input templates to customize how your pages are rendered.
+Define a page in your 11ty input templates to customize how your pages are rendered.
 
 Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
 
@@ -58,16 +58,14 @@ module.exports = previewModePageClass;
 ```
 
 ### Adding to Eleventy configuration ###
-You will need to tell your Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
+You connect the Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
 
 #### **`.eleventy.js`** ####
 ```javascript
 module.exports = function(eleventyConfig) {
-//...
   const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
   addPreviewModeToEleventy(eleventyConfig);
-//...
-  
+}
 ```
 
 ### Git ignore ###
@@ -80,7 +78,7 @@ When your run your 11ty build locally, you don't want to save the generated outp
 
 ## Setting up with Azure Function as a Service (FaaS) ##
 
-Using Azure FaaS, the service can render a single page from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  Any request without `?postid=` will be considered a forwarded resource request.  Requests without any path will render a digest page showing all the available preview pages that match a tag id.
+Using Azure FaaS, the service can render posts from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  Any request without `?postid=` will be considered a forwarded resource request.  Requests without any path will render a digest page showing all the available preview pages that match a tag id.
 
 ### Azure function source ###
 The package has a complete handler for Azure FaaS - `azureFunctionHandler`.  Include the url for your live web site to allow resource request forwarding.
@@ -92,7 +90,7 @@ module.exports = async function (context) {
 }
 ```
 #### **`yourFunction\function.json`** ####
-You will need to trap ALL routes for your functions to support resource forwarding.  Set `route` like this...
+Trap ALL routes for your functions to support resource forwarding.  Set `route` like this...
 ```json
 {
   "bindings": [
