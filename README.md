@@ -73,7 +73,7 @@ module.exports = function(eleventyConfig) {
 ### Git ignore ###
 When your run your 11ty build locally, you don't want to save the generated output (`preview-mode-auto-generated`) to your repo.
 #### .gitignore ####
-```md
+```php
 # 11ty serverless generated folder
 /preview-mode-auto-generated
 ```
