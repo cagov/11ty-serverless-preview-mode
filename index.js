@@ -44,6 +44,39 @@ const serverlessHandler = async queryStringParameters => {
 };
 
 /**
+ * Azure Function handler to render a single 11ty page
+ * @param {{req:{headers:{"x-original-url":string},query:*},res:{statusCode:number;body:string;headers?:*};done:function}} context Azure Function context
+ * @param {string} resourceUrl Full url to site where resource content can be directed.
+ * @example
+ * module.exports = async function (context) {
+ *   await azureFunctionHandler(context,"https://mydomain");
+ * } 
+ */
+const azureFunctionHandler = async (context, resourceUrl) => {
+    const req = context.req;
+    const originalUrl = req.headers["x-original-url"];
+    try {
+        if (req.query.postid || originalUrl === '/') {
+            context.res = await serverlessHandler(req.query);
+        } else { // Resource call, redirect back to the main site
+            context.res = { statusCode: 301, headers: { location: `${resourceUrl}${originalUrl}` }, body: null };
+        }
+    } catch (error) {
+        context.res = {
+            statusCode: error.httpStatusCode || 500,
+            body: JSON.stringify(
+                {
+                    error: error.message,
+                },
+                null,
+                2
+            ),
+        };
+    }
+    if (context.done) context.done();
+}
+
+/**
 * @typedef {Object} WordpressPostRow Expected POST input when using the Wordpress API - https://developer.wordpress.org/rest-api/reference/posts/
 * @property {number} author
 * @property {number[]} categories
@@ -141,6 +174,7 @@ const addPreviewModeDataElements = () => (
 
 module.exports = {
     serverlessHandler,
+    azureFunctionHandler,
     getPostJsonFromWordpress,
     addPreviewModeToEleventy,
     addPreviewModeDataElements,
