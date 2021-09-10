@@ -11,7 +11,7 @@ If you have content in Wordpress for your eleventy site, you can create a Functi
 
 ## User experience ##
 1. Content editor edits and saves a Wordpress post.
-1. Content editor navigates to the preivew mode endpoint.
+1. Content editor navigates to the preview mode endpoint.
 1. Content editor selects a post from the list of preview ready posts.
 1. Content editor views fully rendered content.
 
