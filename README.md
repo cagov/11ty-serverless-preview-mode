@@ -1,26 +1,18 @@
-# eleventy serverless Preview Mode for Azure FaaS
+# Eleventy serverless Preview Mode for Wordpress API
+
+If you have content in Wordpress for your eleventy site, you can create a FaaS (ex. Azure) function that will render content for preview right out of Wordpress.
 
 ## Features
-- Single page 11ty rendering of content retrieved from your data source (Wordpress API).
-- Digest page for all pages that match a Wordpress tag ID.
-
-## Intent
-* Using an existing 11ty project, add the ability to render a single page from Wordpress with an Azure function.
-* Provide access to unpublished "preview" data
-* Make a distributable module to do this
-
-## Not obvious concepts
-* resource links (.css, .png, etc) directed back at the service will redirect to the main site
-
-## Current situtation
-* Can render a single page from Wordpress
-* Module still needs to be refined to be more distributable
-* Update the sample below to be more generic
-
+- Single page 11ty rendering of content retrieved from your Wordpress API data source.
+- Digest page for all pages that match a specific Wordpress tag ID.
+- Easy Azure FaaS integration
 
 ## Sample preview mode page template ##
-Add this to your 11ty `pages` folder as `previewModePage.11ty.js` to support dynamic rendering.  
+You will need to have a single page in your 11ty input templates to customize how your pages are rendered.
+
+Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
 ```
+//@ts-check
 const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
 
 const wordPressSettings = {
@@ -65,14 +57,21 @@ class previewModePageClass {
 module.exports = previewModePageClass;
 ```
 
-## Add this to `.eleventy.js` ##
+## Add this to your existing `.eleventy.js` ##
 ```
+module.exports = function(eleventyConfig) {
+//...
   const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
   addPreviewModeToEleventy(eleventyConfig);
+//...
+  
 ```
 
 ## For Azure FaaS ##
-`index.js`
+
+Using Azure FaaS, the service can render a single page from remote content, while redirecting all other resource requests (.css, .png, etc) back to the real web server.  To detect a resource request, this implementation uses a route filter for `segments`.
+
+### `index.js` ###
 ```
 const { serverlessHandler } = require("@cagov/11ty-serverless-preview-mode");
 const contentRedirectSiteTarget = "https://digital.ca.gov";
@@ -105,7 +104,7 @@ module.exports = async function (context, req) {
   if (context.done) context.done();
 }
 ```
-`function.json`
+### `function.json` ###
 ```
 {
   "bindings": [
