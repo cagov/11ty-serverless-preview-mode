@@ -1,6 +1,6 @@
 {
     "name": "@cagov/11ty-serverless-preview-mode",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "license": "MIT",
     "publishConfig": {
         "access": "public"
@@ -28,5 +28,8 @@
         "serverless",
         "eleventy-plugin",
         "wordpress"
-    ]
+    ],
+    "scripts": {
+        "publish to NPM": "npm publish"
+    }
 }
