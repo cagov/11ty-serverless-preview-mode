@@ -126,3 +126,5 @@ module.exports = async function (context, req) {
   ]
 }
 ```
+
+This package is available on NPM at https://www.npmjs.com/package/@cagov/11ty-serverless-preview-mode
