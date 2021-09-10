@@ -2,7 +2,7 @@
 
 Render a single 11ty page using data from your Wordpress API endpoint.  
 
-If you have content in Wordpress for your eleventy site, you can create a Function as a Service (FaaS) function that will render Wordpress content without having to save it anywhere (serverless).
+If you have content in Wordpress for your Eleventy (11ty) site, you can create a Function as a Service (FaaS) function that will render Wordpress content without having to save it anywhere (serverless).
 
 ## Features ##
 - Single-page 11ty rendering of content retrieved from your Wordpress API data source.
@@ -71,8 +71,8 @@ class previewModePageClass {
 module.exports = previewModePageClass;
 ```
 
-### Adding to Eleventy configuration ###
-You connect the Eleventy build the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
+### Connecting to the 11ty configuration ###
+Connect the 11ty build to the handler service.  At build time, an auto generated folder called `preview-mode-auto-generated` will be created.
 
 #### **`.eleventy.js`** ####
 ```javascript
