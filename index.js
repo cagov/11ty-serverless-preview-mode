@@ -101,7 +101,7 @@ const azureFunctionHandler = async (context, resourceUrl) => {
 * @property {string} template
 * @property {{rendered:string}} title
 * @property {string} type "post"
-* @property {{"wp:featuredmedia"?:{source_url:string}[],author:{name:string}[]}} [_embedded]
+* @property {{"wp:term"?:{id:number;link:string;name:string;slug:string;taxonomy:string}[][],"wp:featuredmedia"?:{source_url:string}[],author:{name:string}[]}} [_embedded]
 * @property {*} [_links]
 */
 
