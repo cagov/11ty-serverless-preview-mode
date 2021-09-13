@@ -108,7 +108,7 @@ const azureFunctionHandler = async (context, resourceUrl) => {
 /**
 * @typedef {Object} WordpressSettings
 * @property {string} wordPressSite
-* @property {number} previewWordPressTagId
+* @property {string} [previewWordPressTagSlug]
 */
 
 /**
@@ -140,7 +140,23 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 
         return fetchJson(wpApiPage);
     } else {
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?tags=${wordpressSettings.previewWordPressTagId}&orderby=modified&_fields=title,modified,id&cachebust=${Math.random()}`;
+        //Get the tag ID for the tag slug
+        let TagFilter = "";
+        if(wordpressSettings.previewWordPressTagSlug) {
+            const wpTagSearch = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/tags?slug=${wordpressSettings.previewWordPressTagSlug}&_fields=id`;
+            const TagId = await fetchJson(wpTagSearch)
+                .then((/** @type {{id:number}[]} */ TagResults) => {
+                    if(TagResults.length) {
+                        return TagResults[0].id;
+                    }
+                });
+    
+            if (!TagId) {
+                throw new Error(`Tag slug not found - "${wordpressSettings.previewWordPressTagSlug}"`);
+            }
+            TagFilter = `tags=${TagId}&`;
+        }
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}orderby=modified&_fields=title,modified,id&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage)
             .then((/** @type {{id:number,title:{rendered:string},modified:string}[]} */ previewPosts) => {
