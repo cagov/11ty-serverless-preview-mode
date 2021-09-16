@@ -54,7 +54,7 @@ const serverlessHandler = async queryStringParameters => {
  */
 const azureFunctionHandler = async (context, resourceUrl) => {
     const req = context.req;
-    const originalUrl = req.headers["x-original-url"];
+    const originalUrl = (req.headers ? req.headers["x-original-url"] : null) || '/'; //default to root path if no origin url specified
     try {
         if (req.query.postid || originalUrl === '/') {
             context.res = await serverlessHandler(req.query);
