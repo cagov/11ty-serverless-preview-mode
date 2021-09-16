@@ -11,7 +11,7 @@ const digestPageJSON = require('./digestPageJson.json');
 
 /**
  * Adds EleventyServerless with simple config for single page rendering
- * @param {*} eleventyConfig 
+ * @param {import("@11ty/eleventy/src/UserConfig")} eleventyConfig 
  * @example
  * module.exports = function(eleventyConfig) {
  *   const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
