@@ -45,8 +45,8 @@ const serverlessHandler = async queryStringParameters => {
 
 /**
  * Azure Function handler to render a single 11ty page
- * @param {{req:{headers:{"x-original-url":string},query:*},res:{statusCode:number;body:string;headers?:*};done:function}} context Azure Function context
- * @param {string} resourceUrl Full url to site where resource content can be directed.
+ * @param {{req:{headers:{"x-original-url":string},query:*},res:*;done:function}} context Azure Function context
+ * @param {string} resourceUrl Full url to site where resource content can be proxied from.
  * @example
  * module.exports = async function (context) {
  *   await azureFunctionHandler(context,"https://mydomain");
@@ -54,12 +54,26 @@ const serverlessHandler = async queryStringParameters => {
  */
 const azureFunctionHandler = async (context, resourceUrl) => {
     const req = context.req;
-    const originalUrl = (req.headers ? req.headers["x-original-url"] : null) || '/'; //default to root path if no origin url specified
+    const originalUrl = req.headers["x-original-url"];
     try {
         if (req.query.postid || originalUrl === '/') {
             context.res = await serverlessHandler(req.query);
-        } else { // Resource call, redirect back to the main site
-            context.res = { statusCode: 301, headers: { location: `${resourceUrl}${originalUrl}` }, body: null };
+        } else if (resourceUrl.length) { // Resource call, proxy the content from the resourceUrl
+            const fetchResponse = await fetch(`${resourceUrl}${originalUrl}`);
+            if (!fetchResponse.ok) {
+              let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
+              // @ts-ignore
+              err.httpStatusCode = fetchResponse.status;
+              throw err;
+            }
+            const body = new Uint8Array(await fetchResponse.arrayBuffer());
+            context.res = {
+                isRaw: true,
+                headers: { 
+                    "content-type": fetchResponse.headers.get('content-type')
+                },
+                body
+            };
         }
     } catch (error) {
         context.res = {
