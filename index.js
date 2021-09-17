@@ -170,14 +170,14 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
             }
             TagFilter = `tags=${TagId}&`;
         }
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}orderby=modified&_fields=title,modified,id&cachebust=${Math.random()}`;
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}per_page=100&orderby=modified&_fields=title,modified,id&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage)
             .then((/** @type {{id:number,title:{rendered:string},modified:string}[]} */ previewPosts) => {
                 const links = previewPosts.map(x => `<li><a href="?postid=${x.id}">${x.title.rendered}</a> - ${x.modified}</li>`);
 
                 let digestReturn = { ...digestPageJSON };
-                digestReturn.content.rendered = `<ul>${links.join()}</ul>`;
+                digestReturn.content.rendered = `<ul>${links.join('')}</ul>`;
                 return digestReturn
             });
     }
