@@ -61,15 +61,15 @@ const azureFunctionHandler = async (context, resourceUrl) => {
         } else if (resourceUrl.length) { // Resource call, proxy the content from the resourceUrl
             const fetchResponse = await fetch(`${resourceUrl}${originalUrl}`);
             if (!fetchResponse.ok) {
-              let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
-              // @ts-ignore
-              err.httpStatusCode = fetchResponse.status;
-              throw err;
+                let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
+                // @ts-ignore
+                err.httpStatusCode = fetchResponse.status;
+                throw err;
             }
             const body = new Uint8Array(await fetchResponse.arrayBuffer());
             context.res = {
                 isRaw: true,
-                headers: { 
+                headers: {
                     "content-type": fetchResponse.headers.get('content-type')
                 },
                 body
@@ -139,7 +139,7 @@ const fetchJson = async (url, opts) => {
 }
 
 /**
- * @param {{ eleventy: { serverless: { query: { postid?: string}}}}} itemData
+ * @param {{ eleventy: { serverless: { query: { postid?: string, postslug?: string}}}}} itemData
  * @param {WordpressSettings} wordpressSettings
  * @returns {Promise<WordpressPostRow>}
  * @example
@@ -153,18 +153,27 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
         const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/${itemData.eleventy.serverless.query.postid}?_embed&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage);
+    } else if (itemData.eleventy.serverless.query.postslug) {
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${itemData.eleventy.serverless.query.postslug}&_embed&cachebust=${Math.random()}`;
+
+        const result = await fetchJson(wpApiPage);
+        if(result && result.length) {
+            return result[0];
+        } else {
+            throw new Error(`Post slug not found - "${itemData.eleventy.serverless.query.postslug}"`);
+        }
     } else {
         //Get the tag ID for the tag slug
         let TagFilter = "";
-        if(wordpressSettings.previewWordPressTagSlug) {
+        if (wordpressSettings.previewWordPressTagSlug) {
             const wpTagSearch = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/tags?slug=${wordpressSettings.previewWordPressTagSlug}&_fields=id`;
             const TagId = await fetchJson(wpTagSearch)
                 .then((/** @type {{id:number}[]} */ TagResults) => {
-                    if(TagResults.length) {
+                    if (TagResults.length) {
                         return TagResults[0].id;
                     }
                 });
-    
+
             if (!TagId) {
                 throw new Error(`Tag slug not found - "${wordpressSettings.previewWordPressTagSlug}"`);
             }
@@ -174,7 +183,7 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 
         return fetchJson(wpApiPage)
             .then((/** @type {{id:number,title:{rendered:string},modified:string,slug:string}[]} */ previewPosts) => {
-                const links = previewPosts.map(x => `<li><a href="?postid=${x.id}&slug=${x.slug}">${x.title.rendered}</a> - ${x.modified}</li>`);
+                const links = previewPosts.map(x => `<li><a href="?postid=${x.id}&postslug=${x.slug}">${x.title.rendered}</a> - ${x.modified}</li>`);
 
                 let digestReturn = { ...digestPageJSON };
                 digestReturn.content.rendered = `<ul>${links.join('')}</ul>`;
