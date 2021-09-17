@@ -183,10 +183,17 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 
         return fetchJson(wpApiPage)
             .then((/** @type {{id:number,title:{rendered:string},modified:string,slug:string}[]} */ previewPosts) => {
-                const links = previewPosts.map(x => `<li><a href="?postid=${x.id}&postslug=${x.slug}">${x.title.rendered}</a> - ${x.modified}</li>`);
+                const links = previewPosts.map(x => `<li>${x.modified} - <a href="?postid=${x.id}&postslug=${x.slug}">${x.title.rendered}</a></li>`);
 
                 let digestReturn = { ...digestPageJSON };
-                digestReturn.content.rendered = `<ul>${links.join('')}</ul>`;
+                if(links.length) {
+                    digestReturn.content.rendered = `<ul>${links.join('')}</ul>`;
+                    digestReturn.date = previewPosts[0].modified;
+                    digestReturn.modified = previewPosts[0].modified;
+                } else {
+                    digestReturn.content.rendered = 'No content to preview';
+                }
+
                 return digestReturn
             });
     }
