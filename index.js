@@ -179,7 +179,7 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
             }
             TagFilter = `tags=${TagId}&`;
         }
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}per_page=100&orderby=modified&_fields=title,modified,id&cachebust=${Math.random()}`;
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}per_page=100&orderby=modified&_fields=title,modified,id,slug&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage)
             .then((/** @type {{id:number,title:{rendered:string},modified:string,slug:string}[]} */ previewPosts) => {
