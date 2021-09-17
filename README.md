@@ -17,15 +17,16 @@ If you have content in Wordpress for your Eleventy (11ty) site, you can create a
 
 ## Sample navigation ##
 - `https://[my-function-url]/` - Digest page.  Display a list of all posts with the `preview` tag set.
-- `https://[my-function-url]/myfile.jpg` - Resource request.  Will redirect (301) to the main site (`https://[real-url]/myfile.jpg`) to return live content.  This is how CSS and other content can be sent to the browser as relative links.
+- `https://[my-function-url]/myfile.jpg` - Resource request.  Will proxy content from the main site (`https://[real-url]/myfile.jpg`).  This is how CSS and other content can be sent to the browser as relative links.
 - `https://[my-function-url]/?postid=123` - Render request.  Will render the page using 11ty with Wordpress content from post #123.
 ## Assumptions ##
 - End users are using Wordpress to edit content.
 - Your project is using `wordpress-to-github` (Coming soon) or similiar tool for deploying Wordpress content to an 11ty project.
 
 ## Eleventy setup ##
-
 Use your existing 11ty build to provide all the template work required to render your preview.
+
+This package requires functionality available in Eleventy v1.0.0 - https://www.11ty.dev/docs/plugins/serverless/
 
 ### Preview mode page template ###
 Define a page in your 11ty input templates to customize how your pages are rendered.
@@ -62,7 +63,7 @@ class previewModePageClass {
         itemData.description = jsonData.excerpt.rendered;
         itemData.lead = jsonData.excerpt.rendered;
         itemData.author = jsonData._embedded.author[0].name;
-        itemData.previewimage = featuredMedia ? featuredMedia[0].source_url : "img/thumb/APIs-Blog-Postman-Screenshot-1.jpg";
+        itemData.previewimage = featuredMedia ? featuredMedia[0].source_url : "img/thumb/default-preview-image.jpg";
 
         return jsonData.content.rendered;
     }
@@ -138,4 +139,5 @@ Set `routePrefix` to blank in the `host.json` file in your Azure function projec
 }
 ```
 
+## References ##
 This package is available on NPM at https://www.npmjs.com/package/@cagov/11ty-serverless-preview-mode
