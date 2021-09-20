@@ -16,9 +16,9 @@ If you have content in Wordpress for your Eleventy (11ty) site, you can create a
 1. Content editor views fully rendered content.
 
 ## Sample navigation ##
-- `https://[my-function-url]/` - Digest page.  Display a list of all posts with the `preview` tag set.
-- `https://[my-function-url]/myfile.jpg` - Resource request.  Will proxy content from the main site (`https://[real-url]/myfile.jpg`).  This is how CSS and other content can be sent to the browser as relative links.
-- `https://[my-function-url]/?postid=123` - Render request.  Will render the page using 11ty with Wordpress content from post #123.
+- `https://[my-function-url]/` - Digest page.  Display a list of the most recently updates posts (up to 100).  Can also be set to filter for a specific tag (ex `preview`).
+- `https://[my-function-url]/myfile.jpg` - Resource request.  Will download and then make available by proxy content from the main site (`https://[real-url]/myfile.jpg`).  This allows for CSS and other content can be sent to the browser as relative links.
+- `https://[my-function-url]/?postid=123`, `https://[my-function-url]/?postslug=my-page` - Render requests.  Will render the page using 11ty with Wordpress content from post #123.
 ## Assumptions ##
 - End users are using Wordpress to edit content.
 - Your project is using `wordpress-to-github` (Coming soon) or similiar tool for deploying Wordpress content to an 11ty project.
