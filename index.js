@@ -28,6 +28,17 @@ const addPreviewModeToEleventy = eleventyConfig => {
             filter: ['**/*', '!**']
         } // Filtering out all pages, this still brings in includes
     });
+
+    //Add a link to our fake single page template.  This will overwrite the 'eleventy-serverless-map.json'
+    const fakeTemplatePath = __dirname + '/previewModePage.njk';
+    const newMap = [{ inputPath: fakeTemplatePath, serverless: { [serverlessFunctionFolderName]: eleventySinglePagePath } }];
+    eleventyConfig.on('afterBuild', async () => {
+        // Run me after the build ends
+        await eleventyConfig.events.emit(
+            "eleventy.serverlessUrlMap",
+            newMap
+        );
+    });
 };
 
 /**
