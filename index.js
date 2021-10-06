@@ -53,7 +53,7 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSett
         for (const item of collection.items) {
             const itemData = item.data;
             if (!item.outputPath && itemData.eleventy?.serverless) {
-                const jsonData = await getPostJsonFromWordpress(itemData.eleventy.serverless.query.postid, itemData.eleventy.serverless.query.postslug, wordPressSettings);
+                const jsonData = await getPostJsonFromWordpress(itemData.eleventy.serverless.query?.postid, itemData.eleventy.serverless.query?.postslug, wordPressSettings);
 
                 settingFunction(item, jsonData);
 
