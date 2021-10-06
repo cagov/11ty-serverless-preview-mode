@@ -10,15 +10,34 @@ const { EleventyServerlessBundlerPlugin } = require("@11ty/eleventy");
 const digestPageJSON = require('./digestPageJson.json');
 
 /**
- * Adds EleventyServerless with simple config for single page rendering
+* Callback function to start mapping Wordpress data to an 11ty item
+* @callback WordpressSettingCallback
+* @param {*} item the 11ty item ready to render
+* @param {WordpressPostRow} jsonData json from Wordpress
+* @returns {void}
+*/
+
+
+/**
+ *  Adds EleventyServerless with simple config for single page rendering
  * @param {import("@11ty/eleventy/src/UserConfig")} eleventyConfig 
- * @example
- * module.exports = function(eleventyConfig) {
- *   const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
- *   addPreviewModeToEleventy(eleventyConfig);
- * }
+ * @param {WordpressSettingCallback} settingFunction
+ * @param {WordpressSettings} wordPressSettings
+ * @example 
+ * module.exports = function (eleventyConfig) {
+ *   addPreviewModeToEleventy(eleventyConfig, itemSetterCallback, wordPressSettings);
  */
-const addPreviewModeToEleventy = eleventyConfig => {
+const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSettings) => {
+    if (!eleventyConfig) {
+        throw new Error('eleventyConfig is required.')
+    }
+    if (!settingFunction) {
+        throw new Error('settingFunction is required.')
+    }
+    if (!wordPressSettings) {
+        throw new Error('wordPressSettings is required.')
+    }
+
     eleventyConfig.addPlugin(EleventyServerlessBundlerPlugin, {
         name: serverlessFunctionFolderName, // The serverless function name from your permalink object
         inputDir: "",
@@ -28,7 +47,22 @@ const addPreviewModeToEleventy = eleventyConfig => {
             filter: ['**/*', '!**']
         } // Filtering out all pages, this still brings in includes
     });
-};
+
+    eleventyConfig.addCollection("myserverless", async function (collection) {
+        //Using the addCollection to just be able to exec a loop on eleventy data.  Not actually returning a collection.
+        for (const item of collection.items) {
+            const itemData = item.data;
+            if (!item.outputPath && itemData.eleventy?.serverless) {
+                const jsonData = await getPostJsonFromWordpress(itemData, wordPressSettings);
+
+                settingFunction(item, jsonData);
+
+            }
+        }
+
+        return [];
+    });
+}
 
 /**
  * runs serverless eleventy on the default page.  Returns a function response.
@@ -157,7 +191,7 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
         const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${itemData.eleventy.serverless.query.postslug}&_embed&cachebust=${Math.random()}`;
 
         const result = await fetchJson(wpApiPage);
-        if(result && result.length) {
+        if (result && result.length) {
             return result[0];
         } else {
             throw new Error(`Post slug not found - "${itemData.eleventy.serverless.query.postslug}"`);
@@ -186,7 +220,7 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
                 const links = previewPosts.map(x => `<li>${x.modified} - <a href="?postid=${x.id}&postslug=${x.slug}">${x.title.rendered}</a></li>`);
 
                 let digestReturn = { ...digestPageJSON };
-                if(links.length) {
+                if (links.length) {
                     digestReturn.content.rendered = `<ul>${links.join('')}</ul>`;
                     digestReturn.date = previewPosts[0].modified;
                     digestReturn.modified = previewPosts[0].modified;
@@ -200,29 +234,21 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 }
 
 /**
- * Puts the correct permalink in the data section
- * @example 
- * async data() {
- *     return {
- *         layout: "page",
- *         tags: ["news"],
- *         ...addPreviewModeDataElements()
- *     };
- * }
+ * Class to return in the default template `previewModePage.11ty.js`
+ * @example module.exports = require("@cagov/11ty-serverless-preview-mode").previewModePageClass;
  */
-const addPreviewModeDataElements = () => (
-    {
-        permalink: {
-            [serverlessFunctionFolderName]: eleventySinglePagePath
-        }
+class previewModePageClass {
+    data() {
+        return {
+            permalink: {
+                [serverlessFunctionFolderName]: eleventySinglePagePath
+            }
+        };
     }
-);
+}
 
 module.exports = {
-    serverlessHandler,
     azureFunctionHandler,
-    getPostJsonFromWordpress,
     addPreviewModeToEleventy,
-    addPreviewModeDataElements,
-    serverlessFunctionFolderName
+    previewModePageClass
 }

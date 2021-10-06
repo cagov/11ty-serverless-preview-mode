@@ -35,41 +35,7 @@ Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (
 
 #### **`pages\previewModePage.11ty.js`** ####
 ```javascript
-const { addPreviewModeDataElements, getPostJsonFromWordpress } = require("@cagov/11ty-serverless-preview-mode");
-
-const wordPressSettings = {
-    wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
-    previewWordPressTagSlug: 'preview-mode' // optional filter for digest list of preview posts from Wordpress
-}
-
-class previewModePageClass {
-    async data() {
-        return {
-            layout: "page", //Or whatever layout the preview page should have
-            tags: ["news"], //Or whatever tags the preview page should have
-            ...addPreviewModeDataElements()
-        };
-    }
-
-    async render(itemData) {
-        const jsonData = await getPostJsonFromWordpress(itemData, wordPressSettings);
-
-        //Customize for you templates here
-
-        let featuredMedia = jsonData._embedded["wp:featuredmedia"];
-        itemData.title = jsonData.title.rendered;
-        itemData.publishdate = jsonData.date.split('T')[0]; //new Date(jsonData.modified_gmt)
-        itemData.meta = jsonData.excerpt.rendered;
-        itemData.description = jsonData.excerpt.rendered;
-        itemData.lead = jsonData.excerpt.rendered;
-        itemData.author = jsonData._embedded.author[0].name;
-        itemData.previewimage = featuredMedia ? featuredMedia[0].source_url : "img/thumb/default-preview-image.jpg";
-
-        return jsonData.content.rendered;
-    }
-}
-
-module.exports = previewModePageClass;
+module.exports = require("@cagov/11ty-serverless-preview-mode").previewModePageClass;
 ```
 
 ### Connecting to the 11ty configuration ###
@@ -77,9 +43,36 @@ Connect the 11ty build to the handler service.  At build time, an auto generated
 
 #### **`.eleventy.js`** ####
 ```javascript
+const { addPreviewModeToEleventy2 } = require("@cagov/11ty-serverless-preview-mode");
+const wordPressSettings = {
+  wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
+  previewWordPressTagSlug: 'preview-mode' // optional filter for digest list of preview in Wordpress
+}
+
+/**
+ * @type {import('@cagov/11ty-serverless-preview-mode').WordpressSettingFunction}
+ */
+const itemSetterCallback = (item, jsonData) => {
+  let featuredMedia = jsonData._embedded["wp:featuredmedia"];
+
+  //Customize for your templates
+  item.data.layout = 'page.njk';
+  item.data.tags = ['news'];
+  item.data.addtositemap = false;
+  item.data.title = jsonData.title.rendered;
+  item.data.publishdate = jsonData.date.split('T')[0]; //new Date(jsonData.modified_gmt)
+  item.data.meta = jsonData.excerpt.rendered;
+  item.data.description = jsonData.excerpt.rendered;
+  item.data.lead = jsonData.excerpt.rendered;
+  item.data.author = jsonData._embedded.author[0].name;
+  item.data.previewimage = featuredMedia ? featuredMedia[0].source_url : "img/thumb/APIs-Blog-Postman-Screenshot-1.jpg";
+
+  item.template.frontMatter.content += jsonData.content.rendered;
+}
+
 module.exports = function(eleventyConfig) {
-  const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
-  addPreviewModeToEleventy(eleventyConfig);
+  addPreviewModeToEleventy2(eleventyConfig, itemSetterCallback, wordPressSettings);
+  //...
 }
 ```
 
