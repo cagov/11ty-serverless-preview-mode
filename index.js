@@ -53,7 +53,7 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSett
         for (const item of collection.items) {
             const itemData = item.data;
             if (!item.outputPath && itemData.eleventy?.serverless) {
-                const jsonData = await getPostJsonFromWordpress(itemData, wordPressSettings);
+                const jsonData = await getPostJsonFromWordpress(itemData.eleventy.serverless.query.postid, itemData.eleventy.serverless.query.postslug, wordPressSettings);
 
                 settingFunction(item, jsonData);
 
@@ -173,28 +173,24 @@ const fetchJson = async (url, opts) => {
 }
 
 /**
- * @param {{ eleventy: { serverless: { query: { postid?: string, postslug?: string}}}}} itemData
+ * @param {string?} postid
+ * @param {string?} postslug
  * @param {WordpressSettings} wordpressSettings
  * @returns {Promise<WordpressPostRow>}
- * @example
- * async render(itemData) {
- *   const jsonData = await getPostJsonFromWordpress(itemData,wordPressSettings);
- *   return jsonData.content.rendered;
- * }
  */
-const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
-    if (itemData.eleventy.serverless.query.postid) {
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/${itemData.eleventy.serverless.query.postid}?_embed&cachebust=${Math.random()}`;
+const getPostJsonFromWordpress = async (postid, postslug, wordpressSettings) => {
+    if (postid) {
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/${postid}?_embed&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage);
-    } else if (itemData.eleventy.serverless.query.postslug) {
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${itemData.eleventy.serverless.query.postslug}&_embed&cachebust=${Math.random()}`;
+    } else if (postslug) {
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${postslug}&_embed&cachebust=${Math.random()}`;
 
         const result = await fetchJson(wpApiPage);
         if (result && result.length) {
             return result[0];
         } else {
-            throw new Error(`Post slug not found - "${itemData.eleventy.serverless.query.postslug}"`);
+            throw new Error(`Post slug not found - "${postslug}"`);
         }
     } else {
         //Get the tag ID for the tag slug
