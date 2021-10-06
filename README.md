@@ -31,11 +31,13 @@ This package requires functionality available in Eleventy v1.0.0 - https://www.1
 ### Preview mode page template ###
 Define a page in your 11ty input templates to customize how your pages are rendered.
 
-Add this to your 11ty input folder (ex. `pages`) with the `.11ty.js` extention (ex. `previewModePage.11ty.js`).  
+Add this to your 11ty input folder (ex. `pages`) with the `.njk` extention (ex. `previewModePage.njk`).  
 
-#### **`pages\previewModePage.11ty.js`** ####
-```javascript
-module.exports = require("@cagov/11ty-serverless-preview-mode").previewModePageClass;
+#### **`pages\previewModePage.njk`** ####
+```js
+---js
+require("@cagov/11ty-serverless-preview-mode").previewModeNjkHeader
+---
 ```
 
 ### Connecting to the 11ty configuration ###
@@ -43,7 +45,7 @@ Connect the 11ty build to the handler service.  At build time, an auto generated
 
 #### **`.eleventy.js`** ####
 ```javascript
-const { addPreviewModeToEleventy2 } = require("@cagov/11ty-serverless-preview-mode");
+const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
 const wordPressSettings = {
   wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
   previewWordPressTagSlug: 'preview-mode' // optional filter for digest list of preview in Wordpress
@@ -71,7 +73,7 @@ const itemSetterCallback = (item, jsonData) => {
 }
 
 module.exports = function(eleventyConfig) {
-  addPreviewModeToEleventy2(eleventyConfig, itemSetterCallback, wordPressSettings);
+  addPreviewModeToEleventy(eleventyConfig, itemSetterCallback, wordPressSettings);
   //...
 }
 ```

@@ -90,7 +90,7 @@ const azureFunctionHandler = async (context, resourceUrl) => {
     const req = context.req;
     const originalUrl = (req.headers ? req.headers["x-original-url"] : null) || '/'; //default to root path if no origin url specified
     try {
-        if (req.query.postid || originalUrl === '/') {
+        if (req.query.postid || req.query.postslug || originalUrl === '/') {
             context.res = await serverlessHandler(req.query);
         } else if (resourceUrl.length) { // Resource call, proxy the content from the resourceUrl
             const fetchResponse = await fetch(`${resourceUrl}${originalUrl}`);
@@ -234,21 +234,20 @@ const getPostJsonFromWordpress = async (itemData, wordpressSettings) => {
 }
 
 /**
- * Class to return in the default template `previewModePage.11ty.js`
- * @example module.exports = require("@cagov/11ty-serverless-preview-mode").previewModePageClass;
+ * Class to return in the default template `previewModePage.njk`
+ * @example
+ * ---js
+require("@cagov/11ty-serverless-preview-mode").previewModeNjkHeader
+---
  */
-class previewModePageClass {
-    data() {
-        return {
-            permalink: {
-                [serverlessFunctionFolderName]: eleventySinglePagePath
-            }
-        };
-    }
-}
+const previewModeNjkHeader = {
+    permalink: {
+            [serverlessFunctionFolderName]: eleventySinglePagePath 
+    }   
+};
 
 module.exports = {
     azureFunctionHandler,
     addPreviewModeToEleventy,
-    previewModePageClass
+    previewModeNjkHeader
 }
