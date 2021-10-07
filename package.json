@@ -9,7 +9,7 @@
     "typings": "index.js",
     "description": "Serverless rendering of a single 11ty page using Wordpress API data",
     "dependencies": {
-        "@11ty/eleventy": "^1.0.0-canary.44",
+        "@11ty/eleventy": "^1.0.0-beta.2",
         "node-fetch": "^2.6.1"
     },
     "author": {

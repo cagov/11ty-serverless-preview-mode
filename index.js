@@ -48,15 +48,15 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSett
         } // Filtering out all pages, this still brings in includes
     });
 
-    eleventyConfig.addCollection("myserverless", async function (collection) {
-        //Using the addCollection to just be able to exec a loop on eleventy data.  Not actually returning a collection.
+    eleventyConfig.addCollection("myserverless", async function (/** @type { import("@11ty/eleventy/src/TemplateCollection")} */ collection) {
+        //Using the addCollection to just be able to exec a loop on eleventy data.  Not actually returning a collection.\
         for (const item of collection.items) {
             const itemData = item.data;
             if (!item.outputPath && itemData.eleventy?.serverless) {
                 const jsonData = await getPostJsonFromWordpress(itemData.eleventy.serverless.query?.postid, itemData.eleventy.serverless.query?.postslug, wordPressSettings);
 
                 settingFunction(item, jsonData);
-
+                
             }
         }
 
