@@ -1,5 +1,5 @@
 // @ts-check
-const fetch = require('fetch-retry')(require('node-fetch/lib'),{retries:3,retryDelay:2000});
+const fetch = require('fetch-retry')(require('node-fetch/lib'), { retries: 3, retryDelay: 2000 });
 
 /**
  * The folder name to place the generated server handler.  Must be added to .gitignore.
@@ -22,7 +22,6 @@ const digestPageJSON = require('./digestPageJson.json');
 * Query expected format for preivew mode that includes wordpress settings
 * @typedef {object} PreviewModeQuery
 * @property {string} [postid]
-* @property {string} [postslug]
 * @property {WordpressSettings} wordpressSettings
 */
 
@@ -105,24 +104,45 @@ const azureFunctionHandler = async (context, wordpressSettings) => {
         /** @type {PreviewModeQuery} */
         const previewModeQuery = { ...req.query, wordpressSettings };
 
-        if (previewModeQuery.postid || previewModeQuery.postslug || originalUrl === '/') {
+        if (originalUrl === '/') { //digest page
             context.res = await serverlessHandler(previewModeQuery);
-        } else if (wordpressSettings.resourceUrl) { // Resource call, proxy the content from the resourceUrl
-            const fetchResponse = await fetch(`${wordpressSettings.resourceUrl}${originalUrl}`);
-            if (!fetchResponse.ok) {
-                let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
-                // @ts-ignore
-                err.httpStatusCode = fetchResponse.status;
-                throw err;
+        } else {
+            /** @type {{id:number;slug:string}[]} */
+            let posts = [];
+
+            const targetSlug = originalUrl.replace(/^\//, ''); //Remove leading slash
+            if (targetSlug.match(/^[a-zA-Z0-9|-]*$/)) {
+                const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${targetSlug}&per_page=100&orderby=modified&_fields=id,slug&cachebust=${Math.random()}`;
+                posts = await fetchJson(wpApiPage)
             }
-            const body = new Uint8Array(await fetchResponse.arrayBuffer());
-            context.res = {
-                isRaw: true,
-                headers: {
-                    "content-type": fetchResponse.headers.get('content-type')
-                },
-                body
-            };
+
+            if (posts.length) {
+                //found a post that matches slug
+                previewModeQuery.postid = posts[0].id.toString();
+                context.res = await serverlessHandler(previewModeQuery);
+            } else if (wordpressSettings.resourceUrl) { // Resource call, proxy the content from the resourceUrl
+                const fetchResponse = await fetch(`${wordpressSettings.resourceUrl}${originalUrl}`);
+                if (!fetchResponse.ok) {
+                    let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
+                    // @ts-ignore
+                    err.httpStatusCode = fetchResponse.status;
+                    throw err;
+                }
+                const body = new Uint8Array(await fetchResponse.arrayBuffer());
+                context.res = {
+                    isRaw: true,
+                    headers: {
+                        "content-type": fetchResponse.headers.get('content-type')
+                    },
+                    body
+                };
+            } else {
+                //resource request not supported
+                context.res = {
+                    statusCode: 405,
+                    body: 'resourceUrl not defined',
+                };
+            }
         }
     } catch (error) {
         context.res = {
@@ -193,22 +213,13 @@ const fetchJson = async (url, opts) => {
  * @returns {Promise<WordpressPostRow>}
  */
 const getPostJsonFromWordpress = async query => {
-    const { postid, postslug, wordpressSettings } = query;
+    const { postid, wordpressSettings } = query;
 
     if (postid) {
         const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/${postid}?_embed&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage);
-    } else if (postslug) {
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${postslug}&_embed&cachebust=${Math.random()}`;
-
-        const result = await fetchJson(wpApiPage);
-        if (result && result.length) {
-            return result[0];
-        } else {
-            throw new Error(`Post slug not found - "${postslug}"`);
-        }
-    } else {
+    } else { //Digest page
         //Get the tag ID for the tag slug
         let TagFilter = "";
         if (wordpressSettings.previewWordPressTagSlug) {
@@ -225,11 +236,11 @@ const getPostJsonFromWordpress = async query => {
             }
             TagFilter = `tags=${TagId}&`;
         }
-        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/?${TagFilter}per_page=100&orderby=modified&_fields=title,modified,id,slug&cachebust=${Math.random()}`;
+        const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?${TagFilter}per_page=100&orderby=modified&_fields=title,modified,slug&cachebust=${Math.random()}`;
 
         return fetchJson(wpApiPage)
-            .then((/** @type {{id:number,title:{rendered:string},modified:string,slug:string}[]} */ previewPosts) => {
-                const links = previewPosts.map(x => `<li>${x.modified} - <a href="?postid=${x.id}&postslug=${x.slug}">${x.title.rendered}</a></li>`);
+            .then((/** @type {{title:{rendered:string},modified:string,slug:string}[]} */ previewPosts) => {
+                const links = previewPosts.map(x => `<li>${x.modified} - <a href="/${x.slug}">${x.title.rendered}</a></li>`);
 
                 let digestReturn = { ...digestPageJSON };
                 if (links.length) {
