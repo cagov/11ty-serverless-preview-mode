@@ -110,7 +110,7 @@ const azureFunctionHandler = async (context, wordpressSettings) => {
             /** @type {{id:number;slug:string}[]} */
             let posts = [];
 
-            const targetSlug = originalUrl.replace(/^\//, ''); //Remove leading slash
+            const targetSlug = originalUrl.replace(/^\//, '').split('/')[0]; //Remove leading slash and anytime after end of slash
             if (targetSlug.match(/^[a-zA-Z0-9|-]*$/)) {
                 const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts?slug=${targetSlug}&per_page=100&orderby=modified&_fields=id,slug&cachebust=${Math.random()}`;
                 posts = await fetchJson(wpApiPage)

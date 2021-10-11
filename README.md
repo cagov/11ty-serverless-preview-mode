@@ -18,7 +18,7 @@ If you have content in Wordpress for your Eleventy (11ty) site, you can create a
 ## Sample navigation ##
 - `https://[my-function-url]/` - Digest page.  Display a list of the most recently updates posts (up to 100).  Can also be set to filter for a specific tag (ex `preview`).
 - `https://[my-function-url]/myfile.jpg` - Resource request.  Will download and then make available by proxy content from the main site (`https://[real-url]/myfile.jpg`).  This allows for CSS and other content can be sent to the browser as relative links.
-- `https://[my-function-url]/?postid=123`, `https://[my-function-url]/?postslug=my-page` - Render requests.  Will render the page using 11ty with Wordpress content from post #123.
+- `https://[my-function-url]/my-slug` - Render requests.  Will render the page using 11ty with Wordpress content from post that matches the slug.
 ## Assumptions ##
 - End users are using Wordpress to edit content.
 - Your project is using `wordpress-to-github` (Coming soon) or similiar tool for deploying Wordpress content to an 11ty project.
@@ -46,10 +46,6 @@ Connect the 11ty build to the handler service.  At build time, an auto generated
 #### **`.eleventy.js`** ####
 ```javascript
 const { addPreviewModeToEleventy } = require("@cagov/11ty-serverless-preview-mode");
-const wordPressSettings = {
-  wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
-  previewWordPressTagSlug: 'preview-mode' // optional filter for digest list of preview in Wordpress
-}
 
 /**
  * @type {import('@cagov/11ty-serverless-preview-mode').WordpressSettingFunction}
@@ -73,7 +69,7 @@ const itemSetterCallback = (item, jsonData) => {
 }
 
 module.exports = function(eleventyConfig) {
-  addPreviewModeToEleventy(eleventyConfig, itemSetterCallback, wordPressSettings);
+  addPreviewModeToEleventy(eleventyConfig, itemSetterCallback);
   //...
 }
 ```
@@ -95,8 +91,16 @@ The package has a complete handler for Azure FaaS - `azureFunctionHandler`.  Inc
 #### **`yourFunction\index.js`** ####
 ```javascript
 const { azureFunctionHandler } = require("@cagov/11ty-serverless-preview-mode");
+
+/** @type {import('@cagov/11ty-serverless-preview-mode').WordpressSettings} */
+const wordpressSettings = {
+  wordPressSite: "https://live-odi-content-api.pantheonsite.io", //Wordpress endpoint
+  resourceUrl: "https://digital.ca.gov", //host for resource content redirects
+  previewWordPressTagSlug: 'preview-mode' // optional filter for digest list of preview in Wordpress
+}
+
 module.exports = async function (context) {
-  await azureFunctionHandler(context, "https://digital.ca.gov");
+  await azureFunctionHandler(context, wordpressSettings);
 }
 ```
 #### **`yourFunction\function.json`** ####
