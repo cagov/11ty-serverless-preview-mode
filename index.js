@@ -17,25 +17,28 @@ const digestPageJSON = require('./digestPageJson.json');
 * @returns {void}
 */
 
+/**
+* Query expected format for preivew mode that includes wordpress settings
+* @typedef {object} PreviewModeQuery
+* @property {string} [postid]
+* @property {string} [postslug]
+* @property {WordpressSettings} wordpressSettings
+*/
 
 /**
  *  Adds EleventyServerless with simple config for single page rendering
  * @param {import("@11ty/eleventy/src/UserConfig")} eleventyConfig 
  * @param {WordpressSettingCallback} settingFunction
- * @param {WordpressSettings} wordPressSettings
  * @example 
  * module.exports = function (eleventyConfig) {
  *   addPreviewModeToEleventy(eleventyConfig, itemSetterCallback, wordPressSettings);
  */
-const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSettings) => {
+const addPreviewModeToEleventy = (eleventyConfig, settingFunction) => {
     if (!eleventyConfig) {
         throw new Error('eleventyConfig is required.')
     }
     if (!settingFunction) {
         throw new Error('settingFunction is required.')
-    }
-    if (!wordPressSettings) {
-        throw new Error('wordPressSettings is required.')
     }
 
     eleventyConfig.addPlugin(EleventyServerlessBundlerPlugin, {
@@ -53,10 +56,12 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction, wordPressSett
         for (const item of collection.items) {
             const itemData = item.data;
             if (!item.outputPath && itemData.eleventy?.serverless) {
-                const jsonData = await getPostJsonFromWordpress(itemData.eleventy.serverless.query?.postid, itemData.eleventy.serverless.query?.postslug, wordPressSettings);
+                /** @type {PreviewModeQuery} */
+                const query = itemData.eleventy?.serverless.query;
+                const jsonData = await getPostJsonFromWordpress(query);
 
                 settingFunction(item, jsonData);
-                
+
             }
         }
 
@@ -80,20 +85,29 @@ const serverlessHandler = async queryStringParameters => {
 /**
  * Azure Function handler to render a single 11ty page
  * @param {{req:{headers:{"x-original-url":string},query:*},res:*;done:function}} context Azure Function context
- * @param {string} resourceUrl Full url to site where resource content can be proxied from.
+ * @param {WordpressSettings} wordpressSettings Configuration
  * @example
+ * const wordpressSettings = {
+ *   wordPressSite: "https://live-odi-content-api.pantheonsite.io",
+ *   resourceUrl: "https://digital.ca.gov",
+ *   previewWordPressTagSlug: 'preview-mode'
+ * }
+ *
  * module.exports = async function (context) {
- *   await azureFunctionHandler(context,"https://mydomain");
- * } 
+ *   await azureFunctionHandler(context, wordpressSettings);
+ * }
  */
-const azureFunctionHandler = async (context, resourceUrl) => {
+const azureFunctionHandler = async (context, wordpressSettings) => {
     const req = context.req;
     const originalUrl = (req.headers ? req.headers["x-original-url"] : null) || '/'; //default to root path if no origin url specified
     try {
         if (req.query.postid || req.query.postslug || originalUrl === '/') {
+
+            req.query = { ...req.query, wordpressSettings };
+
             context.res = await serverlessHandler(req.query);
-        } else if (resourceUrl.length) { // Resource call, proxy the content from the resourceUrl
-            const fetchResponse = await fetch(`${resourceUrl}${originalUrl}`);
+        } else if (wordpressSettings.resourceUrl) { // Resource call, proxy the content from the resourceUrl
+            const fetchResponse = await fetch(`${wordpressSettings.resourceUrl}${originalUrl}`);
             if (!fetchResponse.ok) {
                 let err = new Error(`${fetchResponse.status} - ${fetchResponse.statusText} - ${fetchResponse.url}`);
                 // @ts-ignore
@@ -155,8 +169,9 @@ const azureFunctionHandler = async (context, resourceUrl) => {
 
 /**
 * @typedef {Object} WordpressSettings
-* @property {string} wordPressSite
-* @property {string} [previewWordPressTagSlug]
+* @property {string} wordPressSite Full path to Wordpress instance
+* @property {string} [resourceUrl] Optional Full path to live site that contains resources for proxy redirection
+* @property {string} [previewWordPressTagSlug] Slug to filter to when showing available pages
 */
 
 /**
@@ -173,12 +188,12 @@ const fetchJson = async (url, opts) => {
 }
 
 /**
- * @param {string?} postid
- * @param {string?} postslug
- * @param {WordpressSettings} wordpressSettings
+ * @param {PreviewModeQuery} query
  * @returns {Promise<WordpressPostRow>}
  */
-const getPostJsonFromWordpress = async (postid, postslug, wordpressSettings) => {
+const getPostJsonFromWordpress = async query => {
+    const { postid, postslug, wordpressSettings } = query;
+
     if (postid) {
         const wpApiPage = `${wordpressSettings.wordPressSite}/wp-json/wp/v2/posts/${postid}?_embed&cachebust=${Math.random()}`;
 
@@ -238,8 +253,8 @@ require("@cagov/11ty-serverless-preview-mode").previewModeNjkHeader
  */
 const previewModeNjkHeader = {
     permalink: {
-            [serverlessFunctionFolderName]: eleventySinglePagePath 
-    }   
+        [serverlessFunctionFolderName]: eleventySinglePagePath
+    }
 };
 
 module.exports = {
