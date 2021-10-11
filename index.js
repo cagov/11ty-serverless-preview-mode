@@ -1,5 +1,6 @@
-//@ts-check
-const fetch = require('node-fetch/lib');
+// @ts-check
+const fetch = require('fetch-retry')(require('node-fetch/lib'),{retries:3,retryDelay:2000});
+
 /**
  * The folder name to place the generated server handler.  Must be added to .gitignore.
  */
@@ -71,7 +72,7 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction) => {
 
 /**
  * runs serverless eleventy on the default page.  Returns a function response.
- * @param {*} queryStringParameters from your function's request `req.query`
+ * @param {PreviewModeQuery} queryStringParameters from your function's request `req.query`
  * @returns {Promise<{statusCode:number, headers:{"Content-Type":string},body:string}>} Function response Promise
  * @example context.res = await serverlessHandler(req.query); //Azure FaaS
  */
@@ -101,11 +102,11 @@ const azureFunctionHandler = async (context, wordpressSettings) => {
     const req = context.req;
     const originalUrl = (req.headers ? req.headers["x-original-url"] : null) || '/'; //default to root path if no origin url specified
     try {
-        if (req.query.postid || req.query.postslug || originalUrl === '/') {
+        /** @type {PreviewModeQuery} */
+        const previewModeQuery = { ...req.query, wordpressSettings };
 
-            req.query = { ...req.query, wordpressSettings };
-
-            context.res = await serverlessHandler(req.query);
+        if (previewModeQuery.postid || previewModeQuery.postslug || originalUrl === '/') {
+            context.res = await serverlessHandler(previewModeQuery);
         } else if (wordpressSettings.resourceUrl) { // Resource call, proxy the content from the resourceUrl
             const fetchResponse = await fetch(`${wordpressSettings.resourceUrl}${originalUrl}`);
             if (!fetchResponse.ok) {
