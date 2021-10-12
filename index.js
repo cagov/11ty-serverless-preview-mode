@@ -60,15 +60,17 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction) => {
                 /** @type {PreviewModeQuery} */
                 const query = itemData.eleventy?.serverless.query;
 
-                //Massive slug replacement
-                item.data.page.fileSlug = query.slug;
-                item.data.page.url = `/${query.slug}`;
-                item.data.page.filePathStem = `/${query.slug}`;
-                item.fileSlug = query.slug;
-                item.filePathStem = `/${query.slug}`;
-                item.template.fileSlugStr = query.slug;
-                item.template.filePathStem = `/${query.slug}`;
-                item.url = `/${query.slug}`;
+                if (query.slug) {
+                    //Massive slug replacement
+                    item.data.page.fileSlug = query.slug;
+                    item.data.page.url = `/${query.slug}`;
+                    item.data.page.filePathStem = `/${query.slug}`;
+                    item.fileSlug = query.slug;
+                    item.filePathStem = `/${query.slug}`;
+                    item.template.fileSlugStr = query.slug;
+                    item.template.filePathStem = `/${query.slug}`;
+                    item.url = `/${query.slug}`;
+                }
 
                 const jsonData = await getPostJsonFromWordpress(query);
 
