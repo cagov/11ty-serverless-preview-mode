@@ -22,6 +22,7 @@ const digestPageJSON = require('./digestPageJson.json');
 * Query expected format for preivew mode that includes wordpress settings
 * @typedef {object} PreviewModeQuery
 * @property {string} [postid]
+* @property {string} [slug]
 * @property {WordpressSettings} wordpressSettings
 */
 
@@ -58,6 +59,18 @@ const addPreviewModeToEleventy = (eleventyConfig, settingFunction) => {
             if (!item.outputPath && itemData.eleventy?.serverless) {
                 /** @type {PreviewModeQuery} */
                 const query = itemData.eleventy?.serverless.query;
+
+                //Massive slug replacement
+                item.fileSlug = query.slug;
+                item.template.fileSlugStr = item.fileSlug;
+                item.template.frontMatter.data.slug = item.fileSlug;
+                item.data.slug = item.fileSlug;
+                item.filePathStem = '/'+item.fileSlug;
+                item.template.filePathStem = item.filePathStem;
+                item.url =`/${query.slug}`;
+                item.data.page.fileSlug = query.slug;
+                item.data.page.url = `/${query.slug}`;
+
                 const jsonData = await getPostJsonFromWordpress(query);
 
                 settingFunction(item, jsonData);
@@ -119,6 +132,7 @@ const azureFunctionHandler = async (context, wordpressSettings) => {
             if (posts.length) {
                 //found a post that matches slug
                 previewModeQuery.postid = posts[0].id.toString();
+                previewModeQuery.slug = targetSlug;
                 context.res = await serverlessHandler(previewModeQuery);
             } else if (wordpressSettings.resourceUrl) { // Resource call, proxy the content from the resourceUrl
                 const fetchResponse = await fetch(`${wordpressSettings.resourceUrl}${originalUrl}`);
